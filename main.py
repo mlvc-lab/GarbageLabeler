@@ -44,12 +44,19 @@ class ImageFrame(Frame):
             self.index -= 1
         elif self.index < 0:
             self.index += 1
-
+        
         image = Image.open(self.imageList[self.index])
+        image = image.resize((600, 400))
         self.size = image.size
         self.img = ImageTk.PhotoImage(image=image)
         self.name.configure(text=self.imageList[self.index])
         self.imglb.configure(image=self.img, width=self.size[0], height=self.size[1])
+
+        filename = str(self.imageList[self.index]).split('\\')[-1]
+        self.parent.lableCheck.initCheckbox()
+        if not self.parent.data.loc[filename].isna().values[0]:            
+            self.parent.lableCheck.updateCheckbox(self.parent.data.loc[filename].values[0])
+
 
     def prevImage(self):
         self.index -= 1
@@ -60,7 +67,7 @@ class ImageFrame(Frame):
         self.updateImage()
 
     def nextUnannotatedImage(self):
-        self.data
+        pass
 
     def widgets(self):
         self.name = Label(self, text='')
@@ -112,7 +119,16 @@ class LabelCheckFrame(Frame):
         for i, var in enumerate(self.vars):
             if var.get() == 1:
                 name.append(str(i+1))
-        self.lbl.configure(text=','.join(name))
+        self.lbl.configure(text=' '.join(name))
+
+    def initCheckbox(self):
+        for i in range(len(self.vars)):
+            self.vars[i].set(0)
+
+    def updateCheckbox(self, checkedLabels):
+        checked = [int(x) for x in checkedLabels.split(' ')]
+        for idx in checked:
+            self.vars[idx - 1].set(1)
 
 
 class MainWindow(Tk):
@@ -160,7 +176,7 @@ class MainWindow(Tk):
 
     def loadFile(self):
         self.saveFile = filedialog.asksaveasfilename()
-        self.data = pd.read_csv(self.saveFile)
+        self.data = pd.read_csv(self.saveFile).set_index('fname')
 
     def save(self):
         if self.saveFile is None or not pathlib.Path(self.saveFile).is_file():
