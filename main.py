@@ -66,8 +66,23 @@ class ImageFrame(Frame):
         self.index += 1
         self.updateImage()
 
+    def prevUnannotatedImage(self):
+        while self.index >= 0:
+            try:
+                self.parent.data.loc[pathlib.Path(self.imageList[self.index]).name]
+            except KeyError:
+                self.updateImage()
+                return
+            self.index -= 1
+
     def nextUnannotatedImage(self):
-        pass
+        while self.index < len(self.imageList):
+            try:
+                self.parent.data.loc[pathlib.Path(self.imageList[self.index]).name]
+            except KeyError:
+                self.updateImage()
+                return
+            self.index += 1
 
     def widgets(self):
         self.name = Label(self, text='')
@@ -78,11 +93,15 @@ class ImageFrame(Frame):
         self.imglb.bind('<Button-1>', lambda e: self.updateImage())
         self.imglb.pack()
 
-        self.nextbtn = Button(self, text='Next >>', command=self.nextImage)
+        self.nextunanobtn = Button(self, text='Next Unannotated >>', command=self.nextUnannotatedImage)
+        self.nextunanobtn.pack(side=RIGHT)
+        self.nextbtn = Button(self, text='Next >', command=self.nextImage)
         self.nextbtn.pack(side=RIGHT)
-        self.prevbtn = Button(self, text='<< Prev', command=self.prevImage)
+        self.prevbtn = Button(self, text='< Prev', command=self.prevImage)
         self.prevbtn.pack(side=RIGHT)
-        
+        self.prevunanobtn = Button(self, text='<< Prev Unannotated', command=self.prevUnannotatedImage)
+        self.prevunanobtn.pack(side=RIGHT)
+
 
 class LabelCheckFrame(Frame):
     def __init__(self, parent, labels):
