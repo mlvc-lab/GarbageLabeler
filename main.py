@@ -35,7 +35,7 @@ class ImageFrame(Frame):
         self.index = 0
         self.widgets()
 
-    def getImageList(self, imageDir):
+    def getImageList(self, imageDir): ##################TODO 중복문제 수정
         glob = sorted(self.imageDir.glob('**/*'))
         self.imageList = [x for x in glob if x.is_file() and x.suffix in ['.jpg', '.png', '.gif', '.jpeg', '.bmp']]
 
@@ -60,7 +60,7 @@ class ImageFrame(Frame):
         self.updateImage()
 
     def nextUnannotatedImage(self):
-        pass
+        self.data
 
     def widgets(self):
         self.name = Label(self, text='')
@@ -104,9 +104,7 @@ class LabelCheckFrame(Frame):
 
     def save(self):
         fname = pathlib.Path(self.parent.imageFrame.name.cget('text')).name
-        # lastindex = self.parent.data.index.max() if self.parent.data.index.max() else 0
-        self.parent.data.loc[self.parent.imageFrame.index] = {'fname': fname, 'labels': self.lbl.cget('text')}
-        # self.parent.data.append(pd.Series({'fname': fname, 'labels': self.lbl.cget('text')}), ignore_index=True)
+        self.parent.data.loc[fname] = {'labels': self.lbl.cget('text')}
         print(self.parent.data)
 
     def makeLabel(self):
@@ -127,7 +125,7 @@ class MainWindow(Tk):
         # self.geometry("600x400+10+10")
         self.fileDir = None
         self.saveFile = None
-        self.data = pd.DataFrame(columns=['fname', 'labels'])
+        self.data = pd.DataFrame(columns=['fname', 'labels']).set_index('fname')
         self.mainMenu()
         self.mainWidgets()
         self.protocol("WM_DELETE_WINDOW", self.closeFile)
@@ -156,7 +154,7 @@ class MainWindow(Tk):
     def openImageDir(self):
         self.fileDir = filedialog.askdirectory()
         self.indicatorFrame.imgDirLable.configure(text=self.fileDir)
-        self.imageFrame.imageDir = pathlib.Path(self.fileDir)
+        self.imageFrame.imageDir = pathlib.Path(self.fileDir) ##################TODO 중복문제 수정
         self.imageFrame.getImageList(self.fileDir)
         self.imageFrame.updateImage()
 
