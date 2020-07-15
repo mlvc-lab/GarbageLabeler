@@ -20,37 +20,35 @@ class IndicatorFrame(Frame):
         self.imgDirLable = Label(self, text='')
         self.imgDirLable.grid(row=0, column=1, padx=5, pady=5)
 
-        self.saveLablePrefix = Label(self, text='SaveFile: ')
-        self.saveLablePrefix.grid(row=1, column=0, padx=5, pady=5, sticky=W)
+        # self.saveLablePrefix = Label(self, text='SaveFile: ')
+        # self.saveLablePrefix.grid(row=1, column=0, padx=5, pady=5, sticky=W)
 
-        self.saveLable = Label(self, text='')
-        self.saveLable.grid(row=1, column=1, padx=5, pady=5)
+        # self.saveLable = Label(self, text='')
+        # self.saveLable.grid(row=1, column=1, padx=5, pady=5)
 
 
 class ImageFrame(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent, bg='red')
         self.parent = parent
-        self.imageDir = None
+        self.imageList = []
         self.index = 0
         self.widgets()
 
-    def updateImage(self):
-        if self.imageDir == None:
-            return
-
+    def getImageList(self, imageDir):
         glob = sorted(self.imageDir.glob('**/*'))
-        files = [x for x in glob if x.is_file()]
+        self.imageList = [x for x in glob if x.is_file() and x.suffix in ['.jpg', '.png', '.gif', '.jpeg', '.bmp']]
 
-        if self.index >= len(files):
+    def updateImage(self):
+        if self.index >= len(self.imageList):
             self.index -= 1
         elif self.index < 0:
             self.index += 1
 
-        image = Image.open(files[self.index])
+        image = Image.open(self.imageList[self.index])
         self.size = image.size
         self.img = ImageTk.PhotoImage(image=image)
-        self.name.configure(text=files[self.index])
+        self.name.configure(text=self.imageList[self.index])
         self.imglb.configure(image=self.img, width=self.size[0], height=self.size[1])
 
     def prevImage(self):
@@ -60,6 +58,9 @@ class ImageFrame(Frame):
     def nextImage(self):
         self.index += 1
         self.updateImage()
+
+    def nextUnannotatedImage(self):
+        pass
 
     def widgets(self):
         self.name = Label(self, text='')
@@ -75,7 +76,6 @@ class ImageFrame(Frame):
         self.prevbtn = Button(self, text='<< Prev', command=self.prevImage)
         self.prevbtn.pack(side=RIGHT)
         
-
 
 class LabelCheckFrame(Frame):
     def __init__(self, parent, labels):
@@ -104,17 +104,17 @@ class LabelCheckFrame(Frame):
 
     def save(self):
         fname = pathlib.Path(self.parent.imageFrame.name.cget('text')).name
-        self.parent.saveFileWriter.writerow([fname, self.lbl.cget('text')])
-        # self.parent.saveFileWriter.
-        print([fname, self.lbl.cget('text')])
+        # lastindex = self.parent.data.index.max() if self.parent.data.index.max() else 0
+        self.parent.data.loc[self.parent.imageFrame.index] = {'fname': fname, 'labels': self.lbl.cget('text')}
+        # self.parent.data.append(pd.Series({'fname': fname, 'labels': self.lbl.cget('text')}), ignore_index=True)
+        print(self.parent.data)
 
     def makeLabel(self):
         name = []
         for i, var in enumerate(self.vars):
             if var.get() == 1:
                 name.append(str(i+1))
-
-        self.lbl.configure(text=', '.join(name))
+        self.lbl.configure(text=','.join(name))
 
 
 class MainWindow(Tk):
@@ -127,7 +127,7 @@ class MainWindow(Tk):
         # self.geometry("600x400+10+10")
         self.fileDir = None
         self.saveFile = None
-        self.data = pd.DataFrame(columns=['img', 'class'])
+        self.data = pd.DataFrame(columns=['fname', 'labels'])
         self.mainMenu()
         self.mainWidgets()
         self.protocol("WM_DELETE_WINDOW", self.closeFile)
@@ -157,20 +157,20 @@ class MainWindow(Tk):
         self.fileDir = filedialog.askdirectory()
         self.indicatorFrame.imgDirLable.configure(text=self.fileDir)
         self.imageFrame.imageDir = pathlib.Path(self.fileDir)
+        self.imageFrame.getImageList(self.fileDir)
         self.imageFrame.updateImage()
 
     def loadFile(self):
         self.saveFile = filedialog.asksaveasfilename()
-        self.indicatorFrame.saveLable.configure(text=saveFileName)
-        self.data = pd.read_csv(saveFileName, header=None)
-    
+        self.data = pd.read_csv(self.saveFile)
+
     def save(self):
-        if 
+        if self.saveFile is None or not pathlib.Path(self.saveFile).is_file():
+            self.saveFile = filedialog.asksaveasfilename()
         self.data.to_csv(self.saveFile)
+        print(self.data)
 
     def closeFile(self):
-        if self.saveFile:
-            self.saveFile.close()
         self.destroy()
 
 
